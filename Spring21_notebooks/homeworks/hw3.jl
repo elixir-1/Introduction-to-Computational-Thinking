@@ -790,9 +790,6 @@ If the same n-gram occurs multiple times (e.g. "said Emma laughing"), then the l
 👉 Write the function `completion_cache`, which takes an array of ngrams (i.e. an array of arrays of words, like the result of your `ngram` function), and returns a dictionary like described above.
 """
 
-# ╔═╡ 7a7da19c-8683-11eb-13b2-b306b477a8b6
-
-
 # ╔═╡ b726f824-fb5e-11ea-328e-03a30544037f
 function completion_cache(grams)
 	ngram_size = size(grams[1],1)
@@ -821,6 +818,9 @@ end
 md"""
 What is this cache telling us? In our sample text, the words "to be" were followed by "or" and by "that". So if we are generating text, and the last two words we wrote are "to be", we can look at the cache, and see that the next word can be either "or" or "that".
 """
+
+# ╔═╡ e82fa4bc-8ff2-11eb-37ff-0f19bab54696
+forest_words
 
 # ╔═╡ 3d105742-fb8d-11ea-09b0-cd2e77efd15c
 md"""
@@ -864,7 +864,7 @@ function ngrams_circular(words, n)
 end
 
 # ╔═╡ abe2b862-fb69-11ea-08d9-ebd4ba3437d5
-completion_cache(ngrams_circular(forest_words, 3))
+sizeof(completion_cache(ngrams_circular(forest_words, 4)))
 
 # ╔═╡ b08190ee-8685-11eb-08c2-77328c382b99
 collect("demo string")
@@ -1496,10 +1496,10 @@ bigbreak
 # ╠═953363dc-fb84-11ea-1128-ebdfaf5160ee
 # ╟─b8af4d06-b38a-4675-9399-81fb5977f077
 # ╟─294b6f50-fb84-11ea-1382-03e9ab029a2d
-# ╠═7a7da19c-8683-11eb-13b2-b306b477a8b6
 # ╠═b726f824-fb5e-11ea-328e-03a30544037f
 # ╠═18355314-fb86-11ea-0738-3544e2e3e816
 # ╟─472687be-995a-4cf9-b9f6-6b56ae159539
+# ╠═e82fa4bc-8ff2-11eb-37ff-0f19bab54696
 # ╠═abe2b862-fb69-11ea-08d9-ebd4ba3437d5
 # ╟─3d105742-fb8d-11ea-09b0-cd2e77efd15c
 # ╠═a72fcf5a-fb62-11ea-1dcc-11451d23c085
