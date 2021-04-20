@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.21
+# v0.14.2
 
 using Markdown
 using InteractiveUtils
@@ -263,20 +263,24 @@ function extend(v::AbstractVector, i)
 	return v[i]
 end
 
-# ╔═╡ ebc14e72-9460-11eb-2105-5fd8750cb176
-vec()
-
 # ╔═╡ abf20aa0-f31b-11ea-2548-9bea4fab4c37
 function greedy_seam(energies, starting_pixel::Int)
 	m,n = size(energies)
-	seam = similar(1:m, 1, m)
-	neighbour = similar(1:3, 1, 3)
+	seam = zeros(Int, m)
+	least_neighbour = 1
+	least_neighbour_index = -1
 	seam[1] = starting_pixel
 	j = starting_pixel
 	for i ∈ 2:m
-		neighbour = energies[i, max(1, j-1):min(n, j+1)]
-		j = j-2+findmin(neighbour)[2]
-		seam[i] = j
+		least_neighbour = 1
+		for x ∈ -1:1
+			if j+x>=1 && j+x<=n && energies[i, j+x]<least_neighbour
+				least_neighbour = energies[i, j+x]
+				least_neighbour_index = j+x
+			end
+		end
+		j = least_neighbour_index
+		seam[i] = least_neighbour_index
 	end
 	vec(seam)
 end
@@ -495,7 +499,9 @@ md"""
 
 # ╔═╡ 6d993a5c-f373-11ea-0dde-c94e3bbd1552
 exhaustive_observation = md"""
-<your answer here>
+• The algorithm does an exhaustive search of all possible paths because at every step, the algorithm looks for a path in 3 bottom directions and computes the total cost of the entire path and then chooses the least energy path. It does not make a local minima choice while determining the seam of the image and hence, all the paths possible will be explored while calculating the least energy path for the image.
+
+• The number of possible seam grow as O($3^n$) as n increases in the image with dimensions mxn.
 """
 
 # ╔═╡ ea417c2a-f373-11ea-3bb0-b1b5754f2fac
@@ -532,25 +538,27 @@ You are expected to read and understand the [documentation on dictionaries](http
 function memoized_least_energy(energies, i, j, memory::Dict)
 	m, n = size(energies)
 	
-	# you should start by copying the code from 
-	# your (not-memoized) least_energies function.
-	
 	if i == m
-		return (energies[i,j], j)
+		memory[(i,j)] = (energies[i,j], j)
+		return memory[(i, j)]
 	end
 	
 	lowest_energy = 1
 	lowest_energy_route = j
 	
 	for x in max(1,j-1):min(n,j+1)
-		y = least_energy(energies, i+1, x)[1]
+		if (haskey(memory, (i+1, x)))
+			y = get(memory, (i+1, x), -1)[1]
+		else
+			y = memoized_least_energy(energies, i+1, x, memory)[1]
+		end
 		if lowest_energy > y
 			lowest_energy = y
 			lowest_energy_route = x
 		end
 	end
-	return (lowest_energy + energies[i,j], lowest_energy_route)
-	
+	memory[(i, j)] = (lowest_energy + energies[i,j], lowest_energy_route)
+	return memory[(i, j)]
 end
 
 # ╔═╡ 1947f304-fa2c-4019-8584-01ef44ef2859
@@ -574,11 +582,12 @@ function memoized_recursive_seam(energies, starting_pixel)
 	memory = Dict{Tuple{Int,Int},Tuple{Float64,Int}}()
 	
 	m, n = size(energies)
-	
-	# Replace the following line with your code.
-	
-	# you should start by copying the code from 
-	# your (not-memoized) recursive_seam function.
+	seam = similar(1:m, 1, m)
+	seam[1] = starting_pixel
+	for i in 2:m
+		seam[i] = memoized_least_energy(energies, i-1, seam[i-1], memory)[2]
+	end
+	return vec(seam)
 end
 
 # ╔═╡ d941c199-ed77-47dd-8b5a-e34b864f9a79
@@ -602,7 +611,27 @@ But in our particular case, we can use a matrix as a storage, since a matrix is 
 function matrix_memoized_least_energy(energies, i, j, memory::Matrix)
 	m, n = size(energies)
 	
-	# Replace the following line with your code.
+	if i == m
+		memory[i,j] = (energies[i,j], j)
+		return memory[i, j]
+	end
+	
+	lowest_energy = 1
+	lowest_energy_route = j
+	
+	for x in max(1,j-1):min(n,j+1)
+		if (memory[i+1, x] != nothing)
+			y = memory[i+1, x][1]
+		else
+			y = matrix_memoized_least_energy(energies, i+1, x, memory)[1]
+		end
+		if lowest_energy > y
+			lowest_energy = y
+			lowest_energy_route = x
+		end
+	end
+	memory[i, j] = (lowest_energy + energies[i,j], lowest_energy_route)
+	return memory[i, j]
 end
 
 # ╔═╡ be7d40e2-f320-11ea-1b56-dff2a0a16e8d
@@ -615,8 +644,15 @@ function matrix_memoized_seam(energies, starting_pixel)
 	
 	m, n = size(energies)
 	
-	# Replace the following line with your code.
-	[starting_pixel for i=1:m]
+# 	# Replace the following line with your code.
+# 	[starting_pixel for i=1:m]
+	
+	seam = similar(1:m, 1, m)
+	seam[1] = starting_pixel
+	for i in 2:m
+		seam[i] = matrix_memoized_least_energy(energies, i-1, seam[i-1], memory)[2]
+	end
+	return vec(seam)
 	
 	
 end
@@ -641,11 +677,15 @@ Now it's easy to see that the above algorithm is equivalent to one that populate
 
 # ╔═╡ ff055726-f320-11ea-32f6-2bf38d7dd310
 function least_energy_matrix(energies)
+	memory = Matrix{Union{Nothing, Tuple{Float64,Int}}}(nothing, size(energies))
 	result = copy(energies)
 	m,n = size(energies)
 	
-	# your code here
-	
+	for i ∈ 1:m
+		for j ∈ 1:n
+			result[i,j] = matrix_memoized_least_energy(energies, i, j, memory)[1]
+		end
+	end
 	
 	return result
 end
@@ -676,8 +716,26 @@ function seam_from_precomputed_least_energy(energies, starting_pixel::Int)
 	least_energies = least_energy_matrix(energies)
 	m, n = size(least_energies)
 	
-	# Replace the following line with your code.
-	[starting_pixel for i=1:m]
+	# # Replace the following line with your code.
+	# [starting_pixel for i=1:m]
+	
+	seam = zeros(Int, m)
+	seam[1] = starting_pixel
+	j=starting_pixel
+	least_neighbour_index = starting_pixel
+	for i ∈ 2:m
+		least_neighbour = 1
+		for x ∈ -1:1
+			if j+x>=1 && j+x<=n && least_energies[i, j+x]<least_neighbour
+				least_neighbour = least_energies[i, j+x]
+				least_neighbour_index = j+x
+			end
+		end
+		j = least_neighbour_index
+		seam[i] = least_neighbour_index
+	end
+	vec(seam)
+		
 	
 end
 
@@ -724,7 +782,7 @@ function shrink_n(min_seam::Function, img::Matrix{<:Colorant}, n, imgs=[];
 	)
 	
 	n==0 && return push!(imgs, img)
-
+	
 	e = energy(img)
 	seam_energy(seam) = sum(e[i, seam[i]]  for i in 1:size(img, 1))
 	_, min_j = findmin(map(j->seam_energy(min_seam(e, j)), 1:size(e, 2)))
@@ -760,7 +818,7 @@ end
 
 # ╔═╡ 4e3ef866-f3c5-11ea-3fb0-27d1ca9a9a3f
 if shrink_dict
-	local n = min(20, size(img, 2))
+	local n = min(50, size(img, 2))
 	dict_carved = shrink_n(memoized_recursive_seam, img, n)
 	md"Shrink by: $(@bind dict_n Slider(1:n, show_value=true))"
 end
@@ -772,7 +830,7 @@ end
 
 # ╔═╡ 50829af6-f3c5-11ea-04a8-0535edd3b0aa
 if shrink_matrix
-	local n = min(20, size(img, 2))
+	local n = min(40, size(img, 2))
 	matrix_carved = shrink_n(matrix_memoized_seam, img, n)
 	md"Shrink by: $(@bind matrix_n Slider(1:n, show_value=true))"
 end
@@ -1014,7 +1072,6 @@ bigbreak
 # ╟─c3543ea4-f393-11ea-39c8-37747f113b96
 # ╠═a4e8e45c-9455-11eb-2f8d-c1cf300290c9
 # ╠═1342aff4-945a-11eb-3e71-e36d9a405a1f
-# ╠═ebc14e72-9460-11eb-2105-5fd8750cb176
 # ╠═abf20aa0-f31b-11ea-2548-9bea4fab4c37
 # ╟─5430d772-f397-11ea-2ed8-03ee06d02a22
 # ╟─6f52c1a2-f395-11ea-0c8a-138a77f03803
@@ -1026,9 +1083,9 @@ bigbreak
 # ╟─1413d047-099f-48c9-bbb0-ff0a3ddb4888
 # ╟─9945ae78-f395-11ea-1d78-cf6ad19606c8
 # ╠═6bac615e-9463-11eb-2210-afa3f2307aa4
-# ╠═87efe4c2-f38d-11ea-39cc-bdfa11298317
-# ╠═f6571d86-f388-11ea-0390-05592acb9195
-# ╠═f626b222-f388-11ea-0d94-1736759b5f52
+# ╟─87efe4c2-f38d-11ea-39cc-bdfa11298317
+# ╟─f6571d86-f388-11ea-0390-05592acb9195
+# ╟─f626b222-f388-11ea-0d94-1736759b5f52
 # ╟─52452d26-f36c-11ea-01a6-313114b4445d
 # ╠═2a98f268-f3b6-11ea-1eea-81c28256a19e
 # ╟─32e9a944-f3b6-11ea-0e82-1dff6c2eef8d
@@ -1092,7 +1149,7 @@ bigbreak
 # ╟─0fbe2af6-f381-11ea-2f41-23cd1cf930d9
 # ╟─48089a00-f321-11ea-1479-e74ba71df067
 # ╟─6b4d6584-f3be-11ea-131d-e5bdefcc791b
-# ╠═437ba6ce-f37d-11ea-1010-5f6a6e282f9b
+# ╟─437ba6ce-f37d-11ea-1010-5f6a6e282f9b
 # ╟─ef88c388-f388-11ea-3828-ff4db4d1874e
 # ╟─ef26374a-f388-11ea-0b4e-67314a9a9094
 # ╟─6bdbcf4c-f321-11ea-0288-fb16ff1ec526
