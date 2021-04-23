@@ -90,15 +90,9 @@ giving
 
 $$\dot{\theta}(t + \delta t) \simeq \dot{\theta}(t) + \delta t \, \ddot{\theta}$$
 
-this can be further discretized using,
+and
 
-$$\theta(t + \delta t) \simeq \theta(t) + \delta t \, \dot{\theta}$$
-
-$$\theta(t + \delta t) \simeq \theta(t) + \delta t ( \dot{\theta}(t) + \delta t \, \ddot{\theta})$$
-
-$$\theta(t + \delta t) \simeq \theta(t) + \delta t \dot{\theta}(t) + (\delta t)^2 \, \ddot{\theta}$$
-
-$$\theta(t + \delta t) \simeq \theta(t) + \delta t \dot{\theta}(t) - (\delta t)^2 \, \frac{g}{l} sin(\theta)$$
+$$\theta(t + \delta t) \simeq \theta(t) + \delta t \, \dot{\theta}(t)$$
 """
 
 # ╔═╡ 0e051bc8-e67e-4ca5-8bb4-1f238bbe3f7b
@@ -111,6 +105,66 @@ $$\theta(t=0) = \theta_0$$
 
 $$\dot{\theta}(t=0) = 0$$
 """
+
+# ╔═╡ 203db499-963a-4fa3-957f-b905424d96d9
+let
+	m = 1
+	g = 9.8
+	l = 10
+	
+	T = 100
+	δt = 1
+	
+	θ_0 = π/12
+	θ̇_0 = 0
+	θ̈_0 = - (g / l) * sin(θ_0)
+	
+	time_range = 0+δt:δt:T
+	
+	axis_lim = 10
+	
+	θ = Vector{Float64}()
+	append!(θ, θ_0)
+	
+	x = l * sin(θ_0)
+	y = - l * cos(θ_0)
+	
+	PE = m * g * l * cos(θ_0)
+	KE = 0.5 * m * l * l * (θ̇_0 * θ̇_0)
+		
+	ME = PE + KE
+	
+	me_t = Vector{Float64}()
+	append!(me_t, ME)
+	
+	# plot([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = []);
+	
+	for t in time_range
+		str = string("Time = ", round(t, digits = 2), " sec");
+		
+		θ_t = θ_0 + (δt * θ̇_0)
+		append!(θ, θ_t)
+		
+		x = l * sin(θ_t)
+		y = - l * cos(θ_t)
+		
+		# plot!([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = [], title = str, title_location = :left);
+		
+		θ̇_0 = θ̇_0 + (δt * θ̈_0)
+		θ_0 = θ_t
+		θ̈_0 = - (g / l) * sin(θ_0)
+		
+		PE = m * g * l * cos(θ_0)
+		KE = 0.5 * m * l * l * (θ̇_0 * θ̇_0)
+		
+		ME = PE + KE
+		append!(me_t, ME)
+		
+	end
+	
+	# plot(θ, alpha=0.5, ms=2, label="")
+	plot(me_t, alpha=0.5, ms=2, label="Energy in the simple pendulum")
+end
 
 # ╔═╡ 1ac63819-9e52-4e77-b325-109775d4f04d
 begin
@@ -141,63 +195,14 @@ begin
 	x1
 end
 
-# ╔═╡ 203db499-963a-4fa3-957f-b905424d96d9
-let
-	θ_0 = π/6
-	T = 10
-	δt = .1
-	θ̇_0 = 0
-	g = 9.8
-	l = 10
-	
-	time_range = 0+δt:δt:T
-	
-	axis_lim = 10
-	
-	x_t = Vector{Float64}()
-	y_t = Vector{Float64}()
-	
-	x = l * sin(θ_0)
-	y = - l * cos(θ_0)
-	
-	append!(x_t, x)
-	append!(y_t, y)
-	
-	plot([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = []);
-	
-	@gif for t in time_range
-		str = string("Time = ", round(t, digits = 2), " sec");
-		
-		θ_t = θ_0 + (δt * θ̇_0) - ((δt) * (δt) * g * sin(θ_0) / l)
-		
-		x = l * sin(θ_t)
-		y = - l * cos(θ_t)
-		
-		append!(x_t, x)
-		append!(y_t, y)
-		
-		plot!([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = [], title = str, title_location = :left, linewidth = 0.5, color = :lightblue, linecolor = :lightblue, linealpha = 0.5, alpha = 0.2);
-		
-		# if t>9
-		# plot!([x_t[t-3:t]], [y_t[t-3:t]],alpha = 0.15,linewidth = 0.5, color = :red, label ="");
-		# plot!([x_t[t-5:t-3]], [y_t[t-5:t-3]],alpha = 0.08,linewidth = 0.5, color = :red, label ="");
-		# plot!([x_t[t-7:t-5]], [y_t[t-7:t-5]],alpha = 0.04,linewidth = 0.5, color = :red, label ="");
-		# plot!([x_t[t-9:t-7]], [y_t[t-9:t-7]],alpha = 0.01,linewidth = 0.5, color = :red, label="");
-		# end
-		
-		θ̇_0 = (θ_t - θ_0) / δt
-		θ_0 = θ_t
-	end
-end
-
 # ╔═╡ Cell order:
 # ╠═c7c324de-a354-11eb-287e-2d1d6a6ab5e0
 # ╠═ef0d7c89-6017-4f42-8a85-db24dafb67e1
 # ╟─fb7c54c6-79d8-41f9-bb51-1bbb3193588c
 # ╟─4df74a52-c618-4e04-b44b-0d610c3b58a0
 # ╟─d1af15e4-2beb-4a7f-9388-d78523c433a7
-# ╟─3ea4dc17-4868-404f-a575-b97a79badbb1
+# ╠═3ea4dc17-4868-404f-a575-b97a79badbb1
 # ╟─0e051bc8-e67e-4ca5-8bb4-1f238bbe3f7b
-# ╟─203db499-963a-4fa3-957f-b905424d96d9
+# ╠═203db499-963a-4fa3-957f-b905424d96d9
 # ╟─1ac63819-9e52-4e77-b325-109775d4f04d
 # ╟─3bb8acbf-a700-414f-ac9b-f53847b6fc77
