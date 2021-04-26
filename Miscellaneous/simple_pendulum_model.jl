@@ -106,14 +106,21 @@ $$\theta(t=0) = \theta_0$$
 $$\dot{\theta}(t=0) = 0$$
 """
 
+# ╔═╡ 125194cb-f28b-4829-ac5b-484399b3a04c
+begin
+	θ = Vector{Float64}()
+	me_t = Vector{Float64}()
+end
+
 # ╔═╡ 203db499-963a-4fa3-957f-b905424d96d9
 let
 	m = 1
 	g = 9.8
 	l = 10
 	
-	T = 100
-	δt = 1
+	T = 20
+	δt = 0.1
+	t = 0
 	
 	θ_0 = π/12
 	θ̇_0 = 0
@@ -123,7 +130,6 @@ let
 	
 	axis_lim = 10
 	
-	θ = Vector{Float64}()
 	append!(θ, θ_0)
 	
 	x = l * sin(θ_0)
@@ -134,12 +140,11 @@ let
 		
 	ME = PE + KE
 	
-	me_t = Vector{Float64}()
 	append!(me_t, ME)
 	
-	# plot([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = []);
+	plot([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = []);
 	
-	for t in time_range
+	@gif for t in time_range
 		str = string("Time = ", round(t, digits = 2), " sec");
 		
 		θ_t = θ_0 + (δt * θ̇_0)
@@ -148,7 +153,7 @@ let
 		x = l * sin(θ_t)
 		y = - l * cos(θ_t)
 		
-		# plot!([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = [], title = str, title_location = :left);
+		plot!([0,x], [0,y],size=(400,300),xlim=(-2*axis_lim,2*axis_lim),ylim=(-1.5*axis_lim,axis_lim),markersize = 8, markershape = :circle,label ="",axis = [], title = str, title_location = :left);
 		
 		θ̇_0 = θ̇_0 + (δt * θ̈_0)
 		θ_0 = θ_t
@@ -161,13 +166,19 @@ let
 		append!(me_t, ME)
 		
 	end
-	
-	# plot(θ, alpha=0.5, ms=2, label="")
-	plot(me_t, alpha=0.5, ms=2, label="Energy in the simple pendulum")
 end
 
+# ╔═╡ cb6cebbb-803b-4466-8ae9-5368773e669a
+plot(θ, alpha=0.5, ms=2, label="Angle of pendulum with the vertical reference line")
+
+# ╔═╡ 7677fbec-78a6-4486-b10f-4466dffc2c83
+plot(me_t, alpha=0.5, ms=2, label="Energy in the simple pendulum")
+
+# ╔═╡ 445440ba-262f-48e2-8c70-5f765beda956
+θ
+
 # ╔═╡ 1ac63819-9e52-4e77-b325-109775d4f04d
-begin
+let
 	T = 17632
 	δt = 4
 	time_range = 0+δt:δt:T
@@ -201,8 +212,12 @@ end
 # ╟─fb7c54c6-79d8-41f9-bb51-1bbb3193588c
 # ╟─4df74a52-c618-4e04-b44b-0d610c3b58a0
 # ╟─d1af15e4-2beb-4a7f-9388-d78523c433a7
-# ╠═3ea4dc17-4868-404f-a575-b97a79badbb1
+# ╟─3ea4dc17-4868-404f-a575-b97a79badbb1
 # ╟─0e051bc8-e67e-4ca5-8bb4-1f238bbe3f7b
-# ╠═203db499-963a-4fa3-957f-b905424d96d9
+# ╟─125194cb-f28b-4829-ac5b-484399b3a04c
+# ╟─203db499-963a-4fa3-957f-b905424d96d9
+# ╠═cb6cebbb-803b-4466-8ae9-5368773e669a
+# ╠═7677fbec-78a6-4486-b10f-4466dffc2c83
+# ╠═445440ba-262f-48e2-8c70-5f765beda956
 # ╟─1ac63819-9e52-4e77-b325-109775d4f04d
 # ╟─3bb8acbf-a700-414f-ac9b-f53847b6fc77
